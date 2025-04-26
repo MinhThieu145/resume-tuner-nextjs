@@ -1,0 +1,116 @@
+"use client";
+import { useState, useRef, useEffect } from "react";
+
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface ChatResponse {
+  content: string;
+  thread_id: string;
+}
+
+export default function Chat() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    
+    const userMessage: Message = { role: "user", content: input };
+    setMessages((msgs) => [...msgs, userMessage]);
+    setInput("");
+    setIsLoading(true);
+    
+    try {
+      // Send all messages to maintain conversation context
+      const response = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+          thread_id: threadId,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      
+      const data: ChatResponse = await response.json();
+      
+      // Save thread ID for continuing the conversation
+      setThreadId(data.thread_id);
+      
+      // Add assistant's response to messages
+      setMessages((msgs) => [
+        ...msgs,
+        { role: "assistant", content: data.content },
+      ]);
+    } catch (error) {
+      console.error("Error calling API:", error);
+      setMessages((msgs) => [
+        ...msgs,
+        { role: "assistant", content: "Sorry, I encountered an error. Please try again." },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full max-h-[80vh] w-full bg-white dark:bg-black border border-[#e5e5e5] dark:border-[#232323] rounded-lg shadow-sm overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {messages.length === 0 && (
+          <div className="text-gray-400 text-center pt-12">Start the conversation...</div>
+        )}
+        {messages.map((msg, idx) => (
+          <div
+            key={idx}
+            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+          >
+            <div
+              className={`px-4 py-2 rounded-lg max-w-[75%] whitespace-pre-wrap font-sans text-base shadow-sm ${
+                msg.role === "user"
+                  ? "bg-black text-white dark:bg-white dark:text-black"
+                  : "bg-gray-100 text-black dark:bg-[#232323] dark:text-white"
+              }`}
+            >
+              {msg.content}
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+      <form
+        onSubmit={handleSend}
+        className="border-t border-[#e5e5e5] dark:border-[#232323] p-4 bg-white dark:bg-black flex gap-2"
+      >
+        <input
+          className="flex-1 px-4 py-2 rounded-lg border border-[#e5e5e5] dark:border-[#232323] bg-white dark:bg-black text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black/30 dark:focus:ring-white/30 font-sans"
+          type="text"
+          placeholder="Type your message..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+        <button
+          type="submit"
+          className="px-4 py-2 rounded-lg bg-black text-white dark:bg-white dark:text-black font-medium hover:bg-gray-900 dark:hover:bg-gray-200 transition"
+        >
+          Send
+        </button>
+      </form>
+    </div>
+  );
+}
