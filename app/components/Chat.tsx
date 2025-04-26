@@ -33,14 +33,14 @@ export default function Chat() {
     
     try {
       // Send all messages to maintain conversation context
-      const response = await fetch("http://localhost:8000/chat", {
+      const response = await fetch("/api/agent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
-          thread_id: threadId,
+          message: input,
+          thread_id: threadId || "default"
         }),
       });
       
