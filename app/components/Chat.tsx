@@ -70,10 +70,10 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[80vh] w-full bg-white dark:bg-black border border-[#e5e5e5] dark:border-[#232323] rounded-lg shadow-sm overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {messages.length === 0 && (
-          <div className="text-gray-400 text-center pt-12">Start the conversation...</div>
+          <div className="text-gray-400 text-center pt-4">Start the conversation...</div>
         )}
         {messages.map((msg, idx) => (
           <div
@@ -81,7 +81,7 @@ export default function Chat() {
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`px-4 py-2 rounded-lg max-w-[75%] whitespace-pre-wrap font-sans text-base shadow-sm ${
+              className={`px-2 py-1.5 rounded-lg max-w-[85%] whitespace-pre-wrap text-sm ${
                 msg.role === "user"
                   ? "bg-black text-white dark:bg-white dark:text-black"
                   : "bg-gray-100 text-black dark:bg-[#232323] dark:text-white"
@@ -95,10 +95,10 @@ export default function Chat() {
       </div>
       <form
         onSubmit={handleSend}
-        className="border-t border-[#e5e5e5] dark:border-[#232323] p-4 bg-white dark:bg-black flex gap-2"
+        className="border-t border-[#e5e5e5] dark:border-[#232323] p-2 bg-white dark:bg-black flex gap-2"
       >
         <input
-          className="flex-1 px-4 py-2 rounded-lg border border-[#e5e5e5] dark:border-[#232323] bg-white dark:bg-black text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black/30 dark:focus:ring-white/30 font-sans"
+          className="flex-1 px-2 py-1.5 rounded-lg border border-[#e5e5e5] dark:border-[#232323] bg-white dark:bg-black text-black dark:text-white focus:outline-none focus:ring-1 focus:ring-black/30 dark:focus:ring-white/30 text-sm"
           type="text"
           placeholder="Type your message..."
           value={input}
@@ -106,9 +106,14 @@ export default function Chat() {
         />
         <button
           type="submit"
-          className="px-4 py-2 rounded-lg bg-black text-white dark:bg-white dark:text-black font-medium hover:bg-gray-900 dark:hover:bg-gray-200 transition"
+          disabled={isLoading}
+          className="px-2 py-1.5 rounded-lg bg-black text-white dark:bg-white dark:text-black text-sm font-medium hover:bg-gray-900 dark:hover:bg-gray-200 transition disabled:opacity-50"
         >
-          Send
+          {isLoading ? (
+            <div className="w-4 h-4 border-2 border-gray-300 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            "Send"
+          )}
         </button>
       </form>
     </div>
