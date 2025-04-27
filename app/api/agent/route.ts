@@ -5,6 +5,8 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { MemorySaver } from "@langchain/langgraph";
 import dotenv from 'dotenv';
+// Import directly from the utils folder
+import { optimizeResumeBullets, BulletPointState } from "../../utils/resume-optimizer";
 
 // Load environment variables if needed in a server context
 if (process.env.NODE_ENV !== 'production') {
@@ -13,16 +15,29 @@ if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: '.env.local' });
 }
 
-// Weather search tool implementation
-const searchWeather = tool(async ({ location }: { location: string }) => {
-  console.log(`Searching for weather in ${location}`);
-  // In a real app, you would call a weather API here
-  return `The search for weather in ${location} is currently unavailable. Please try again later.`;
+// Resume bullet point tool implementation
+const optimizeResume = tool(async ({ job }: { job: string }) => {
+  console.log(`Optimizing resume bullet points for: ${job}`);
+  
+  try {
+    // Call the optimizer function directly
+    const result: BulletPointState = await optimizeResumeBullets(job);
+    
+    // Format the result in a readable way
+    const bulletPoints = result.bullet_points.map((bp: string, i: number) => 
+      `${i+1}. ${bp} ${result.grades[i] === 'pass' ? '✅' : '❌'}`
+    ).join('\n\n');
+    
+    return `Here are optimized resume bullet points for the ${job} role:\n\n${bulletPoints}`;
+  } catch (error) {
+    console.error('Error calling resume optimizer:', error);
+    return `Error optimizing resume: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  }
 }, {
-  name: "weather_search",
-  description: "Get the current weather.",
+  name: "optimize_resume",
+  description: "Generate optimized resume bullet points for a specific job role.",
   schema: z.object({
-    location: z.string().describe("The location to search for weather")
+    job: z.string().describe("The job role to generate bullet points for (e.g., 'Full Stack Developer', 'Data Scientist', etc.)")
   })
 });
 
@@ -36,7 +51,7 @@ const agent = createReactAgent({
     model: "gpt-4o-2024-08-06",
     temperature: 0.2
   }),
-  tools: [searchWeather],
+  tools: [optimizeResume],
   checkpointer
 });
 
@@ -91,6 +106,6 @@ export async function GET() {
   return NextResponse.json({
     status: "online",
     agent: "LangGraph React Agent",
-    tools: ["weather_search"]
+    tools: ["optimize_resume"]
   });
 }
